@@ -1,2 +1,2 @@
-# rest_music_semi
-maven semi project
+# REST_Music-Streaming_Website
+Itwill middle team project
