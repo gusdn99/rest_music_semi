@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.itwill.rest.repository.UserDao">
+
+    <!-- userId로 사용자 조회 -->
+    <select id="selectByUserId" parameterType="String" resultType="com.itwill.rest.repository.User">
+        SELECT * FROM users WHERE user_id = #{userId}
+    </select>
+    
+   <!-- email로 사용자 조회 -->
+    <select id="selectByEmail" parameterType="String" resultType="com.itwill.rest.repository.User">
+        SELECT * FROM users WHERE email = #{email}
+    </select>
+    
+    <!-- nickname으로 사용자 조회 -->
+    <select id="selectByNickname" parameterType="String" resultType="com.itwill.rest.repository.User">
+        SELECT * FROM users WHERE nickname = #{nickname}
+    </select>
+    
+    <!-- 회원 가입 -->
+    <insert id="insert" parameterType="com.itwill.rest.dto.user.UserCreateDto">
+    INSERT INTO users (user_id, user_name, password, email, nickname, hint_question, hint_answer)
+    VALUES (#{userId}, #{userName}, #{password}, #{email}, #{nickname}, #{hintQuestion}, #{hintAnswer})
+    </insert>
+    
+    <!-- 로그인 -->
+    <select id="selectByUserIdAndPassword" resultType="com.itwill.rest.repository.User">
+        select * from users
+        where user_id = #{userId} and password = #{password}
+    </select>
+
+    <select id="selectByUserid" resultType="User">
+        select * from users where user_id = #{userId}
+    </select>
+
+    <select id="selectLikesByUserid" resultType="UserLike">
+    SELECT
+    al.album_image,
+    s.song_id,
+    s.album_id,
+    s.title,
+    LISTAGG(DISTINCT ar.artist_id, ', ') WITHIN GROUP (ORDER BY ar.artist_name) AS artist_id,
+    LISTAGG(DISTINCT ar.artist_name, ', ') WITHIN GROUP (ORDER BY ar.artist_name) AS artist_name,
+    al.album_name
+    FROM
+    likes l
+    JOIN songs s ON l.song_id = s.song_id
+    JOIN albums al ON s.album_id = al.album_id
+    JOIN artist_roles arr ON s.song_id = arr.song_id
+    JOIN artists ar ON arr.artist_id = ar.artist_id
+    WHERE
+    l.id = #{id} and arr.role_id = 10 
+    GROUP BY
+    al.album_image, s.song_id, s.album_id, s.title, al.album_name
+    ORDER BY
+    s.title
+    </select>
+    
+    <select id="findUserId" resultType="User" parameterType="User">
+        select
+        user_id
+        from users where user_name = #{userName} and email = #{email}
+    </select>
+
+    <!-- 비밀번호 찾기 -->
+    <select id="findpassword" resultType="User" parameterType="User">
+        select user_id, email, hint_question, hint_answer from users
+        where user_id = #{userId} and email = #{email}
+        and (hint_question = #{hintQuestion} or (hint_question is null and #{hintQuestion} = 'null'))
+        and (hint_answer = #{hintAnswer} or (hint_answer is null and #{hintAnswer} = 'null'))
+    </select>
+
+    <!-- 비밀번호 설정 -->
+    <update id="setpassword" parameterType="User">
+        update users
+        set password = #{password}
+        where user_id = #{userId}
+    </update>
+    
+    <!-- 프로필 변경 -->
+    <update id="updateUserProfile">
+        update users
+        set
+           user_profile = #{userProfile}
+        where user_id = #{userId}
+    </update>
+    
+    <!-- 프로필 삭제 -->
+    <update id="deleteUserProfile">
+        update users
+        set user_profile = null
+        where user_id = #{userId}
+    </update>
+    
+    <!-- 회원 정보 수정 -->
+    <update id="updateUser">
+        update users
+        set
+            password = #{password},
+            email = #{email},
+            nickname = #{nickname},
+            user_profile = #{userProfile},
+            hint_question = #{hintQuestion},
+            hint_answer = #{hintAnswer}
+        where user_id = #{userId}
+    </update>
+    
+    <!-- 사용자 ID로 사용자 정보 조회 -->
+    <select id="selectUserById" resultType="User">
+        select * from users
+        where id = #{id}
+    </select>
+    
+    <!-- 회원 비활성화 -->
+    <update id="deactivateUser">
+        update users 
+        set is_active = 0,
+            deactivated_until = sysdate + interval '30' day
+        where id = #{id}
+    </update>
+    
+    <!-- 탈퇴 회원 정보 저장 -->
+    <insert id="insertDeletedUser">
+        insert into del_users (id) 
+        values (#{id})
+    </insert>
+    
+    <!-- 비밀번호 확인 -->
+    <select id="checkPassword" resultType="integer">
+        select count(*) 
+        from users 
+        where id = #{id} and password = #{password}
+    </select>
+    
+    <!-- 활성 사용자 확인 -->
+    <select id="checkUserIsActive" resultType="integer">
+        select count(*)
+        from users
+        where user_id = #{userId} and is_active = 1
+    </select>
+     
+    <!-- 로그인 시 비활성화 기간 확인 -->
+    <select id="checkDeactivationPeriod" resultType="integer">
+        select count(*)
+        from users
+        where user_id = #{userId} and deactivated_until > sysdate
+    </select>
+    
+    
+</mapper>
